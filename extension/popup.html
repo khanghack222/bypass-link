@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Bypass Shortlink Việt Nam</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="card">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-area">
+        <span class="icon-emoji">⚡</span>
+        <div>
+          <h2>Bypass Shortlink</h2>
+          <span class="subtext">Phiên bản 1.0.0 (Việt Nam & Quốc tế)</span>
+        </div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="power-toggle" checked>
+        <span class="slider round"></span>
+      </label>
+    </div>
+
+    <!-- Live Status Banner -->
+    <div class="status-banner" id="status-banner">
+      <span class="bullet active"></span>
+      <span class="status-text" id="status-text">Đang bảo vệ (Bộ lọc bật)</span>
+    </div>
+
+    <!-- Actions Panel -->
+    <div class="actions">
+      <button class="btn btn-primary" id="bypass-current-btn">
+        <span>⚡</span> Bypass trang hiện tại
+      </button>
+      <button class="btn btn-secondary" id="clear-history-btn">
+        Dọn lịch sử
+      </button>
+    </div>
+
+    <!-- Active Configurations / Custom domain section -->
+    <div class="tab-section">
+      <div class="tab-header">
+        <span class="tab-title">Lịch sử Bypass gần đây</span>
+        <span class="badge" id="bypass-counter">0</span>
+      </div>
+      <div class="history-list" id="history-container">
+        <!-- Filled dynamically -->
+        <div class="empty-state">
+          Chưa bypass link nào. Khi bạng duy chuyển qua shortlink, link gốc sẽ tự động xuất hiện ở đây!
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Details / Footer -->
+    <div class="footer">
+      <p>Hỗ trợ hơn 45+ trang shortlink phổ biến ở Việt Nam và quốc tế.</p>
+      <p style="margin-top: 4px; font-weight: bold; color: #10b981;">Tự động, an toàn, bảo mật tuyệt đối.</p>
+    </div>
+  </div>
+  <script src="utils.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

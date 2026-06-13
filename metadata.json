@@ -1,0 +1,8 @@
+{
+  "name": "Bypass Shortlink Việt Nam",
+  "description": "Giao diện quản lý, tải xuống và cấu hình Extension Bypass Shortlink Việt Nam và quốc tế tự động.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

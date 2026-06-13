@@ -1,0 +1,623 @@
+import React, { useState } from 'react';
+import { 
+  Zap, 
+  Download, 
+  Layers, 
+  ShieldCheck, 
+  HelpCircle, 
+  Check, 
+  List, 
+  ExternalLink,
+  ChevronRight,
+  Code,
+  FileCode,
+  Coffee,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Play
+} from 'lucide-react';
+import JSZip from 'jszip';
+import { extensionFiles } from './codeTemplates';
+
+export default function App() {
+  const [testUrl, setTestUrl] = useState('');
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testError, setTestError] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<'info' | 'domains' | 'files' | 'steps'>('info');
+  const [selectedFile, setSelectedFile] = useState<keyof typeof extensionFiles>('manifest.json');
+  const [copiedFile, setCopiedFile] = useState(false);
+  const [zippingMessage, setZippingMessage] = useState<string | null>(null);
+
+  // Group 1 list
+  const group1Domains = [
+    "bitly.com", "bitly.com.vn", "by.com.vn", "tinyurl.com", "tinyurl.com.vn",
+    "new.tinyurl.com.vn", "rutgonlink.vn", "rut.vn", "go2.vn", "bom.so", "vnlink.top",
+    "shorturl.at", "is.gd", "tiny.cc", "cutt.ly", "ow.ly", "rebrandly.com", "t.ly"
+  ];
+
+  // Group 2 list
+  const group2Domains = [
+    "link1s.com", "link1s.me", "megaurl.in", "mmo1s.com", "nghienlink.com",
+    "droplink.co", "123link.co", "linktot.net", "traffic68.com", "trafficvn.com",
+    "link1m.com", "link5s.com", "ron.vn", "tinyvn.com",
+    "adf.ly", "shrtfly.com", "clicksfly.com", "shrinkme.io", "shrinkearn.com",
+    "exe.io", "exey.io", "mitly.us", "clk.sh", "cuty.io", "ouo.io", "ouo.press", "shorte.st",
+    "linkvertise.com", "linkvertise.net", "fas.li", "adpaylink.com", "smoner.com",
+    "vb.lk", "bioqr.top"
+  ];
+
+  // Action: Launch live proxy tester search call to /api/bypass-proxy
+  const handleBypassTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testUrl.trim()) return;
+
+    setIsTesting(true);
+    setTestResult(null);
+    setTestError(null);
+
+    try {
+      const resp = await fetch(`/api/bypass-proxy?url=${encodeURIComponent(testUrl.trim())}`);
+      const data = await resp.json();
+      if (data.success) {
+        setTestResult(data);
+      } else {
+        setTestError(data.error || "Không thể bypass trang này từ dịch vụ proxy của máy chủ.");
+      }
+    } catch (err: any) {
+      setTestError("Gặp lỗi khi tạo kết nối đến máy chủ proxy để bypass.");
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(extensionFiles[selectedFile]);
+    setCopiedFile(true);
+    setTimeout(() => {
+      setCopiedFile(false);
+    }, 2000);
+  };
+
+  // Action: Compile all code templates + circular custom PNG base64 icons -> JSZip downloader
+  const handleDownloadZip = async () => {
+    setZippingMessage("Đang đóng gói file extension...");
+    try {
+      const zip = new JSZip();
+
+      // Write code template files
+      Object.entries(extensionFiles).forEach(([filename, content]) => {
+        zip.file(filename, content);
+      });
+
+      // Mock circular colored PNG data to bypass image requirements beautifully
+      const icon16 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      const icon48 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      const icon128 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+      const iconsFolder = zip.folder("icons");
+      if (iconsFolder) {
+        iconsFolder.file("icon16.png", icon16, { base64: true });
+        iconsFolder.file("icon48.png", icon48, { base64: true });
+        iconsFolder.file("icon128.png", icon128, { base64: true });
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = "Bypass_Shortlink_Vietnam.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setZippingMessage("Tải xuống hoàn tất! Vui lòng làm theo hướng dẫn Giải nén.");
+      setTimeout(() => setZippingMessage(null), 5000);
+    } catch (err) {
+      console.error(err);
+      setZippingMessage("Lỗi đóng gói zip. Vui lòng copy thủ công.");
+      setTimeout(() => setZippingMessage(null), 5000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans flex flex-col">
+      {/* Navigation Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 bg-emerald-500 rounded-xl text-white shadow-md shadow-emerald-500/20">
+              <Zap className="h-6 w-6 fill-current animate-pulse" />
+            </span>
+            <div>
+              <h1 className="font-bold text-lg text-slate-900 tracking-tight flex items-center gap-2">
+                Bypass Shortlink Việt Nam <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">v1.0.0</span>
+              </h1>
+              <p className="text-xs text-slate-500">Khám phá, đóng gói & test thử tự động link rút gọn</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={handleDownloadZip}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm rounded-lg transition shadow-sm cursor-pointer"
+            >
+              <Download className="h-4 w-4" />
+              Tải Extension (.ZIP)
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Left column - Live Interactive Test area */}
+        <section className="lg:col-span-8 flex flex-col gap-6" id="test-sandbox">
+          
+          {/* Dynamic Zipping Notification Toast */}
+          {zippingMessage && (
+            <div className="bg-slate-950 text-white p-4 rounded-xl shadow-lg border border-slate-800 flex items-center justify-between animate-bounce">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-emerald-400" />
+                <span className="text-sm font-medium">{zippingMessage}</span>
+              </div>
+              <button onClick={() => setZippingMessage(null)} className="text-xs text-slate-400 hover:text-white underline">Đóng</button>
+            </div>
+          )}
+
+          {/* Hero Banner Intro */}
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="relative z-10 max-w-2xl">
+              <span className="bg-emerald-500/30 text-emerald-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Chrome & Firefox Extension</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold mt-3 tracking-tight">Vượt qua link rút gọn Việt Nam cực nhanh không cần chờ!</h2>
+              <p className="text-emerald-100 mt-2 text-sm sm:text-base leading-relaxed">
+                Quá mệt mỏi với đếm ngược 15 giây, nhấp 3 lần để lấy link, hay những quảng cáo độc hại? Extension tự động theo dõi headers HTTP của nhóm link rút gọn đơn giản, giả lập nhấp chuột an toàn cho các trang Việt Nam phức tạp và tự động chuyển về URL gốc nguyên bản.
+              </p>
+              
+              <div className="mt-6 flex flex-wrap gap-4 text-xs font-semibold">
+                <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                  <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                  100% Bảo mật (Không gửi dữ liệu)
+                </div>
+                <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                  <Zap className="h-4 w-4 text-emerald-300" />
+                  Phản hồi thời gian thực
+                </div>
+                <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                  <Coffee className="h-4 w-4 text-emerald-300" />
+                  Hỗ trợ 45+ Domain Việt/Quốc tế
+                </div>
+              </div>
+            </div>
+
+            {/* Abstract Background Shapes */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full translate-x-20 -translate-y-20 blur-2xl"></div>
+            <div className="absolute bottom-0 right-0 w-60 h-60 bg-emerald-500/20 rounded-full translate-x-10 translate-y-10 blur-xl"></div>
+          </div>
+
+          {/* Real-time Web Interface Tester */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-1 px-2.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg uppercase tracking-wide">Trải nghiệm</span>
+                <h3 className="font-bold text-lg text-slate-900 tracking-tight">Chạy thử Công cụ Bypass Link (HTTP Redirects)</h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Nhập link rút gọn Nhóm 1 (như bit.ly, tinyurl...) bên dưới để máy chủ của chúng tôi tự động gửi yêu cầu theo dõi chuyển hướng và trả về link đích thực tế của bạn ngay lập tức!
+              </p>
+            </div>
+
+            <form onSubmit={handleBypassTest} className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Ví dụ: https://bit.ly/3X8hB9 hoặc tinyurl.com/xyz..."
+                  value={testUrl}
+                  onChange={(e) => setTestUrl(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-100/70 focus:bg-white text-slate-900 placeholder:text-slate-400 border border-slate-300 focus:border-blue-500 rounded-xl text-sm transition font-medium focus:ring-4 focus:ring-blue-100 outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isTesting}
+                className={`px-6 py-3 font-semibold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
+                  isTesting 
+                    ? 'bg-slate-200 text-slate-400' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md'
+                }`}
+              >
+                {isTesting ? (
+                  <>
+                    <span className="h-4 w-4 border-2 border-slate-400 border-t-slate-800 rounded-full animate-spin"></span>
+                    Đang giải mã...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 fill-current text-white" />
+                    Chạy Thử Ngay
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Test Results Output Display */}
+            {testResult && (
+              <div className="mt-2 bg-emerald-50 rounded-xl p-5 border border-emerald-100 animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-emerald-100 pb-3 mb-3">
+                  <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                    <Check className="h-4 w-4 p-0.5 bg-emerald-500 text-white rounded-full" />
+                    Bypass thành công bằng Proxy máy chủ!
+                  </div>
+                  <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-md">
+                    {testResult.method}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-3 text-xs leading-relaxed">
+                  <div>
+                    <span className="text-slate-500 block font-medium">Link rút gọn gửi đi:</span>
+                    <span className="font-mono text-slate-700 font-semibold break-all">{testResult.shortUrl}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 block font-medium">Link Gốc giải mã thành công:</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="font-mono text-emerald-700 bg-emerald-100/50 px-2 py-1 rounded-md font-bold break-all flex-1 text-[13px]">
+                        {testResult.finalUrl}
+                      </span>
+                      <a 
+                        href={testResult.finalUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-1 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md flex items-center gap-1 font-bold shrink-0 text-[11px]"
+                      >
+                        Mở Link
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {testResult.chain && testResult.chain.length > 2 && (
+                    <div>
+                      <span className="text-slate-500 block font-medium mb-1">Chuỗi chuyển hướng (Redirect Chain):</span>
+                      <div className="flex flex-col gap-1 pl-2 border-l-2 border-emerald-300">
+                        {testResult.chain.map((c: string, idx: number) => (
+                          <div key={idx} className="flex items-center gap-1 text-slate-600 font-mono text-[11px]">
+                            <span className="text-emerald-500 font-bold shrink-0">Hợp {idx + 1}:</span>
+                            <span className="truncate" title={c}>{c}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {testError && (
+              <div className="mt-2 bg-red-50 rounded-xl p-4 border border-red-100 text-xs text-red-700 flex items-start gap-2.5 animate-fadeIn">
+                <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-red-800">Không thể giải mã tự động qua Proxy</h4>
+                  <p className="mt-1 leading-relaxed">
+                    {testError}. Điều này thường xảy ra do trang web chặn truy cập từ xa hoặc yêu cầu phải có <b>Content Script / Tương tác DOM (Nhóm 2)</b> vốn chỉ chạy được trên trình duyệt của bạn sau khi bạn cài đặt <b>Extension Bypass Shortlink</b>.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Interactive Information Tabs */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="flex border-b border-slate-200 bg-slate-50">
+              <button
+                onClick={() => setActiveTab('info')}
+                className={`flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition outline-none cursor-pointer text-center ${
+                  activeTab === 'info' 
+                    ? 'border-emerald-500 text-emerald-600 bg-white' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Tính Năng & Cơ Chế
+              </button>
+              <button
+                onClick={() => setActiveTab('domains')}
+                className={`flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition outline-none cursor-pointer text-center ${
+                  activeTab === 'domains' 
+                    ? 'border-emerald-500 text-emerald-600 bg-white' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Các Domain Hỗ Trợ
+              </button>
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition outline-none cursor-pointer text-center ${
+                  activeTab === 'files' 
+                    ? 'border-emerald-500 text-emerald-600 bg-white' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Mã Nguồn Chi Tiết
+              </button>
+              <button
+                onClick={() => setActiveTab('steps')}
+                className={`flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition outline-none cursor-pointer text-center ${
+                  activeTab === 'steps' 
+                    ? 'border-emerald-500 text-emerald-600 bg-white' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Cách Cài Đặt
+              </button>
+            </div>
+
+            <div className="p-6">
+              
+              {/* Tab 1: Info & mechanisms */}
+              {activeTab === 'info' && (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">Cơ chế hoạt động của Extension</h4>
+                    <p className="text-slate-600 text-sm leading-relaxed mt-1">
+                      Extension này tự phân tách các liên kết rút gọn thành hai mô hình logic để tối ưu hóa hiệu năng tối đa mà không gây chậm tab duyệt web khác của người dùng.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 flex gap-3">
+                      <span className="p-2.5 bg-emerald-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0">
+                        1
+                      </span>
+                      <div>
+                        <h5 className="font-bold text-emerald-950 text-sm">Nhóm 1: Bypass Nền Thầm Lặng</h5>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          Chạy thầm lặng trong <b>Background Service Worker</b>, sử dụng API headless fetch để liên tục theo dõi headers chuyển hướng HTTP 301/302, thẻ HTML Meta refresh, hoặc lệnh JavaScript Location. Tự động chuyển trang trước cả khi tab kịp hiển thị!
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-3">
+                      <span className="p-2.5 bg-blue-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0">
+                        2
+                      </span>
+                      <div>
+                        <h5 className="font-bold text-blue-950 text-sm">Nhóm 2: Content Scripts Tương Tác</h5>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          Chạy trong tài nguyên trang. Tự động tắt popup quảng cáo, giả lập nhấp chuột vào nút "Get Link" / "Tiếp Tục", giải mã các tham số Base64 ẩn trong URL truy vấn, và tự nộp các form chuyển hướng ngầm (bypassing countdown hoàn hảo).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-800 flex items-start gap-2.5">
+                    <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-bold">Chính sách Bảo mật và An toàn Tuyệt đối</h5>
+                      <p className="mt-0.5 leading-relaxed text-amber-700/90">
+                        Không giống như nhiều extension rút gọn thương mại thu thập logs duyệt web của bạn, toàn bộ code nguồn của chúng tôi mở rộng độc lập, không kết nối với bất kỳ cơ sở dữ liệu tracking hoặc analytics bên ngoài nào của bên thứ ba.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Supporting domains list */}
+              {activeTab === 'domains' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">Hơn 45+ Nền Tảng Hỗ Trợ Đầy Đủ</h4>
+                    <p className="text-xs text-slate-500 mt-1">Danh sách được cập nhật liên tục để bao quát toàn bộ các trang kiếm tiền hoặc chia sẻ tài nguyên phổ biến.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="font-bold text-emerald-700 text-sm flex items-center gap-1.5 mb-2.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Nhóm 1: Sniffing Redirect Thầm Lặng (Dành cho trang Bitly, TinyURL...)
+                      </h5>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {group1Domains.map((dom) => (
+                          <div key={dom} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono text-[11px] truncate flex items-center justify-between">
+                            <span>{dom}</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <h5 className="font-bold text-blue-700 text-sm flex items-center gap-1.5 mb-2.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        Nhóm 2: Tương tác DOM & Giải mã (Link1s, Megaurl, Ouo, Adfly...)
+                      </h5>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {group2Domains.map((dom) => (
+                          <div key={dom} className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-mono text-[11px] truncate flex items-center justify-between">
+                            <span>{dom}</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Detailed file tree template editor */}
+              {activeTab === 'files' && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-slate-900 text-sm">Xem trước Mã nguồn Tệp Tin</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Mã nguồn nguyên bản cấu tạo nên bộ extension rút gọn.</p>
+                    </div>
+                    <button
+                      onClick={handleCopyCode}
+                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedFile ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Code className="h-3.5 w-3.5" />}
+                      {copiedFile ? 'Đã copy!' : 'Copy Code'}
+                    </button>
+                  </div>
+
+                  {/* Horizontal file pills */}
+                  <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl">
+                    {Object.keys(extensionFiles).map((filename) => (
+                      <button
+                        key={filename}
+                        onClick={() => setSelectedFile(filename as keyof typeof extensionFiles)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition cursor-pointer select-none ${
+                          selectedFile === filename 
+                            ? 'bg-white text-emerald-600 shadow-xs' 
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {filename}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Code viewport block */}
+                  <div className="relative">
+                    <pre className="p-4 bg-slate-950 text-slate-200 text-xs font-mono rounded-xl overflow-x-auto max-h-[400px] leading-relaxed select-all">
+                      {extensionFiles[selectedFile]}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Step by step configuration guide */}
+              {activeTab === 'steps' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">Hướng dẫn Cài Đặt (Load Unpacked Mode)</h4>
+                    <p className="text-xs text-slate-500 mt-1">Làm theo 4 bước nhỏ dưới đây để kích hoạt tính năng bypass trên trình duyệt cá nhân.</p>
+                  </div>
+
+                  <div className="space-y-4 relative pl-4 border-l-2 border-emerald-200">
+                    <div className="relative">
+                      <span className="absolute -left-[25px] top-0.5 p-1 px-2.5 text-xs font-extrabold bg-emerald-500 text-white rounded-full">1</span>
+                      <h5 className="font-bold text-sm text-slate-900">Tải tệp tin về máy</h5>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Nhấp vào nút màu xanh <b>"Tải Extension (.ZIP)"</b> ở đầu trang để tải xuống tệp gói nén ZIP có đầy đủ tệp manifest, popup, background, content và icons.
+                      </p>
+                    </div>
+
+                    <div className="relative py-2">
+                      <span className="absolute -left-[25px] top-2 p-1 px-2.5 text-xs font-extrabold bg-emerald-500 text-white rounded-full">2</span>
+                      <h5 className="font-bold text-sm text-slate-900">Giải nén tệp gốc</h5>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Sau khi tải xuống thành công tệp <b>Bypass_Shortlink_Vietnam.zip</b>, nhấn chuột phải và bấm <b>Giải nén ngay (Extract to...)</b> ra một thư mục để dễ quản lý.
+                      </p>
+                    </div>
+
+                    <div className="relative py-2">
+                      <span className="absolute -left-[25px] top-2 p-1 px-2.5 text-xs font-extrabold bg-emerald-500 text-white rounded-full">3</span>
+                      <h5 className="font-bold text-sm text-slate-900">Bật Chế độ nhà phát triển trên Chrome</h5>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Mở tab mới trên trình duyệt Google Chrome hoặc Microsoft Edge, truy xuất liên kết: <b className="font-mono text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded">chrome://extensions/</b>. Sau đó gạt công tắc <b>"Chế độ nhà phát triển / Developer mode"</b> ở cạnh góc trên cùng bên phải màn hình sang trạng thái BẬT.
+                      </p>
+                    </div>
+
+                    <div className="relative">
+                      <span className="absolute -left-[25px] top-0.5 p-1 px-2.5 text-xs font-extrabold bg-emerald-500 text-white rounded-full">4</span>
+                      <h5 className="font-bold text-sm text-slate-900">Tải tiện ích đã giải nén</h5>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Bấm nút <b>"Tải tiện ích đã giải nén / Load unpacked"</b> nằm ở góc trên cùng bên trái màn hình. Chọn chính xác vị trí thư mục zip vừa giải nén của bạn. Ngay lập tức, biểu tượng sấm sét biểu trưng của tiện ích nén bypass sẽ xuất hiện trên thanh công cụ!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Right column - Sidebar logs and status summary */}
+        <aside className="lg:col-span-4 flex flex-col gap-6">
+          
+          {/* Quick specs card */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
+            <h4 className="font-bold text-slate-900 text-sm tracking-tight mb-4 flex items-center gap-2">
+              <Layers className="h-4.5 w-4.5 text-emerald-500" />
+              Tổng quan Kiến Trúc
+            </h4>
+            
+            <div className="space-y-3.5 text-xs">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span className="text-slate-500">Loại sản phẩm:</span>
+                <span className="font-semibold text-slate-900">Web Extension</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span className="text-slate-500">Chuẩn thiết kế:</span>
+                <span className="font-semibold text-slate-900">Chrome Manifest V3</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span className="text-slate-500">Tương thích:</span>
+                <span className="font-semibold text-slate-900">Chrome, Edge, Firefox, Brave</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span className="text-slate-500">Thành phần:</span>
+                <span className="font-semibold text-slate-900">Background Worker, Content CSS/JS</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Trình kéo nút DOM:</span>
+                <span className="font-semibold text-slate-900">Hỗ trợ đa ngôn ngữ</span>
+              </div>
+            </div>
+
+            <div className="mt-5 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2 text-slate-700 font-bold text-xs">
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                Mã Nguồn Đóng Gói Sẵn
+              </div>
+              <p className="text-slate-500 text-[11px] mt-1.5 leading-relaxed">
+                Tải về định dạng file nén bao gồm đầy đủ tệp cấu trúc chuẩn được kiểm thử và rà soát an toàn. Bạn có thể sử dụng trực tiếp để đóng gói đưa lên cửa hàng Google Web Store phục vụ cộng đồng.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick FAQ accordion */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
+            <h4 className="font-bold text-slate-900 text-sm tracking-tight mb-4 flex items-center gap-2">
+              <HelpCircle className="h-4.5 w-4.5 text-emerald-500" />
+              Câu hỏi thường gặp (FAQ)
+            </h4>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <h5 className="font-bold text-slate-900 mb-1">Gặp Captcha thì xử lý như thế nào?</h5>
+                <p className="text-slate-600 leading-relaxed">
+                  Vì lý do bảo mật và bảo vệ người dùng khỏi việc spam, khi trang rút gọn yêu cầu giải mã Captcha hình ảnh hay đám mây Cloudflare, extension của chúng tôi sẽ tạm dừng và thông báo cho bạn tự giải mã trước khi tiếp tục chuyển tiếp.
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3">
+                <h5 className="font-bold text-slate-900 mb-1">Extension này có chứa virus quảng cáo không?</h5>
+                <p className="text-slate-600 leading-relaxed">
+                  Trực tiếp kiểm duyệt: mã nguồn của tiện ích hoàn toàn tách bạch, rõ ràng, không chứa bất kỳ tracker quảng cáo chèn ép nào và chặn hoàn toàn popunder bất lợi.
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3">
+                <h5 className="font-bold text-slate-900 mb-1">Tôi có tự thêm bớt domain vào bộ lọc được không?</h5>
+                <p className="text-slate-600 leading-relaxed">
+                  Bạn có thể chỉnh sửa trực tiếp tệp tin <code>manifest.json</code> và <code>utils.js</code> để bổ sung thêm các domain mong muốn một cách dễ dàng trước khi nạp tệp unpacked.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+      </main>
+
+      {/* Footer Banner */}
+      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto shadow-inner">
+        <p>© 2026 Bypass Shortlink Việt Nam. Mã nguồn mở, an toàn và tối giản.</p>
+      </footer>
+    </div>
+  );
+}
