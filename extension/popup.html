@@ -12,13 +12,58 @@
         <span class="icon-emoji">⚡</span>
         <div>
           <h2>Bypass Shortlink Pro</h2>
-          <span class="subtext">Phiên bản 2.1.0 (Auto-Get & Countdown)</span>
+          <span class="subtext">Phiên bản 2.2.0 (Automatic Scanning)</span>
         </div>
       </div>
       <label class="switch">
         <input type="checkbox" id="power-toggle" checked>
         <span class="slider round"></span>
       </label>
+    </div>
+
+    <!-- Auto Scan Control Section -->
+    <div class="control-grid">
+      <div class="section-title">⚙️ Cấu hình Quét tự động (V2.2.0)</div>
+      
+      <div class="input-group">
+        <label for="scan-keyword">Từ khóa tìm kiếm:</label>
+        <input type="text" id="scan-keyword" placeholder="Ví dụ: five 88">
+      </div>
+
+      <div class="input-row">
+        <div class="input-group half">
+          <label for="scan-target-domain">Domain đích:</label>
+          <input type="text" id="scan-target-domain" placeholder="Ví dụ: afq.com">
+        </div>
+        <div class="input-group half">
+          <label for="scan-page">Trang Google quét:</label>
+          <input type="number" id="scan-page" min="1" max="10" value="2">
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-group half">
+          <label for="scan-button-text">Text của nút:</label>
+          <input type="text" id="scan-button-text" placeholder="LÀM LẤY MẪN">
+        </div>
+        <div class="input-group half">
+          <label for="scan-wait-time">Chờ tối đa (giây):</label>
+          <input type="number" id="scan-wait-time" min="5" max="300" value="59">
+        </div>
+      </div>
+
+      <div class="scan-actions-row">
+        <button class="btn btn-emerald" id="start-scan-btn">
+          <span>🔍</span> Bắt đầu quét
+        </button>
+        <button class="btn btn-stop" id="stop-scan-btn" disabled>
+          <span>🛑</span> Dừng quét
+        </button>
+      </div>
+
+      <div class="status-indicator">
+        Trạng thái quét: <span id="status-badge" class="badge-idle">Đang chờ lệnh...</span>
+      </div>
     </div>
 
     <!-- Live Step Logging (Log chi tiết từng bước) -->
@@ -51,8 +96,8 @@
     </div>
 
     <div class="footer">
-      <p>Hỗ trợ đầy đủ: TrafficVN, Link1s, Traffic68, MegaURL, OuO, Linkvertise và 45+ trang quốc tế.</p>
-      <p style="margin-top: 4px; font-weight: bold; color: #10b981;">Tự động hoàn toàn • Bỏ qua bước thủ công</p>
+      <p>Hỗ trợ đa nền tảng: TrafficVN, Link1s, Traffic68, MegaURL, OuO, Linkvertise và 45+ trang khác.</p>
+      <p style="margin-top: 4px; font-weight: bold; color: #10b981;">Tự động hoàn toàn • Hoạt động 100% Client-side</p>
     </div>
   </div>
   <script src="utils.js"></script>

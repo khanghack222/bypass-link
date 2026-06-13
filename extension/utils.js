@@ -1,4 +1,4 @@
-// Extension utility helpers for Bypass Shortlink Việt Nam
+// Extension utility helpers for Bypass Shortlink Việt Nam Pro 2.2.0
 const BYPASS_DOMAINS_GROUP1 = [
   "bitly.com", "bitly.com.vn", "by.com.vn", "tinyurl.com", "tinyurl.com.vn",
   "new.tinyurl.com.vn", "rutgonlink.vn", "rut.vn", "go2.vn", "bom.so", "vnlink.top",
@@ -59,4 +59,13 @@ function isExtensionEnabled(callback) {
   chrome.storage.local.get({ enabled: true }, (data) => {
     callback(data.enabled !== false);
   });
+}
+
+function removeAccents(str) {
+  if (!str) return "";
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
 }

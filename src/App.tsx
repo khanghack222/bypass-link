@@ -31,6 +31,112 @@ export default function App() {
   const [copiedFile, setCopiedFile] = useState(false);
   const [zippingMessage, setZippingMessage] = useState<string | null>(null);
 
+  // Scanner simulator states (V3.0.0 Pro with Gemini AI)
+  const [scanKeyword, setScanKeyword] = useState('five 88');
+  const [scanDomain, setScanDomain] = useState('afq.com');
+  const [scanPage, setScanPage] = useState(2);
+  const [scanButtonText, setScanButtonText] = useState('LÀM LẤY MẪN');
+  const [scanWaitTime, setScanWaitTime] = useState(59);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanLogs, setScanLogs] = useState<string[]>([]);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [countdownTimer, setCountdownTimer] = useState<any>(null);
+
+  // AI interactive simulation states
+  const [simulatorTab, setSimulatorTab] = useState<'manual' | 'ai'>('manual');
+  const [aiRawHtml, setAiRawHtml] = useState(`Bước 1: Tìm kiếm từ khóa "cakhiatv" trên Google Search
+Bước 2: Tìm trang web có nhãn tên miền "cakhiatv9.com" ở trang 2 google search
+Bước 3: Nhấp vào liên kết, kéo xuống và click nút nhãn 'LÀM LẤY MẪN'
+Bước 4: Chờ countdown 60 giây để thu được mã bypass.`);
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<any>(null);
+  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
+
+  const handleAiAnalysis = async () => {
+    if (!aiRawHtml.trim()) return;
+    setIsAiAnalyzing(true);
+    setAiAnalysisResult(null);
+    setAiAnalysisError(null);
+    try {
+      const resp = await fetch('/api/gemini/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: aiRawHtml })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setAiAnalysisResult(data);
+      } else {
+        setAiAnalysisError(data.error || "Gặp lỗi khi xử lý phân tích AI của máy chủ.");
+      }
+    } catch (err: any) {
+      setAiAnalysisError("Không kết nối được tới dịch vụ AI của máy chủ.");
+    } finally {
+      setIsAiAnalyzing(false);
+    }
+  };
+
+  const applyAiConfig = () => {
+    if (!aiAnalysisResult) return;
+    setScanKeyword(aiAnalysisResult.searchKeyword || "five 88");
+    setScanDomain(aiAnalysisResult.targetDomainHint || "afq.com");
+    setScanPage(aiAnalysisResult.expectedPageNumber || 2);
+    setScanButtonText(aiAnalysisResult.buttonText || "LÀM LẤY MẪN");
+    setScanWaitTime(aiAnalysisResult.waitTime || 59);
+    setSimulatorTab('manual');
+    
+    setScanLogs([
+      `[✨ AI PRO] Đồng bộ hóa thành công cấu hình Gemini AI từ trang hướng dẫn!`,
+      `[🔑 TỪ KHÓA]: "${aiAnalysisResult.searchKeyword}"`,
+      `[🌐 TRANG BLOG ĐÍCH]: "${aiAnalysisResult.targetDomainHint}"`,
+      `[🎯 BUTTON]: "${aiAnalysisResult.buttonText}"`,
+      `[⏳ THỜI GIAN]: ${aiAnalysisResult.waitTime} giây`,
+      `[📈 ĐỘ TIN CẬY]: ${Math.round((aiAnalysisResult.confidence || 0.8) * 100)}%`,
+      `[💡 GIẢI THÍCH]: ${aiAnalysisResult.explanation}`
+    ]);
+  };
+
+  const startSimulation = () => {
+    setIsScanning(true);
+    setScanProgress(0);
+    setScanLogs([`[11:15:01] Bắt đầu chuỗi quét tự động cho từ khóa: "${scanKeyword}"...`]);
+    
+    const steps = [
+      { text: `[11:15:02] Thiết lập kết nối an toàn với máy chủ Google Search...`, progress: 10, delay: 1000 },
+      { text: `[11:15:03] Gõ giả lập từ khóa "${scanKeyword}" và rà soát kết quả tìm kiếm trang 1...`, progress: 25, delay: 2500 },
+      { text: `[11:15:05] Vận hành rà soát trang kết quả Google kế tiếp (Trang ${scanPage})...`, progress: 45, delay: 4500 },
+      { text: `[11:15:08] Đã định vị trùng khớp miền đích "${scanDomain}"! Đang click chuyển hướng...`, progress: 60, delay: 6500 },
+      { text: `[11:15:10] Đã chuyển vào Blog đích lấy mã. Đang cuộn chuột mượt mà lên/xuống liên tục để kích hoạt countdown...`, progress: 75, delay: 8500 },
+      { text: `[11:15:13] Phát hiện nút lấy mã "${scanButtonText}" (Normalized match). Click tự động nhấp chuột!`, progress: 90, delay: 10500 },
+      { text: `[11:15:15] [COUNTDOWN BẮT ĐẦU] Đang chờ đếm ngược ${scanWaitTime} giây...`, progress: 94, delay: 12500 },
+      { text: `[11:15:20] Countdown hoàn tất! Đã trích xuất mã vượt link: "BYP5812492"`, progress: 100, delay: 15000 },
+      { text: `[11:15:21] Dán mã "BYP5812492" thành công vào ô nhập trang shortlink gốc. Đang kích hoạt Submit...`, progress: 100, delay: 16500 },
+      { text: `[11:15:23] [BYPASS THÀNH CÔNG RỰC RỠ] Form đã tự động submit an toàn! Chuyển hướng sang link đích cuối cùng.`, progress: 100, delay: 18000 },
+    ];
+
+    const timerIds: any[] = [];
+    steps.forEach((step) => {
+      const id = setTimeout(() => {
+        setScanLogs((prev) => [...prev, step.text]);
+        setScanProgress(step.progress);
+        if (step.progress === 100 && step.text.includes("THÀNH CÔNG")) {
+          setIsScanning(false);
+        }
+      }, step.delay);
+      timerIds.push(id);
+    });
+
+    setCountdownTimer(timerIds);
+  };
+
+  const stopSimulation = () => {
+    if (countdownTimer) {
+      countdownTimer.forEach((id: any) => clearTimeout(id));
+    }
+    setIsScanning(false);
+    setScanLogs((prev) => [...prev, `[🛑 HỆ THỐNG] Người dùng yêu cầu dừng cưỡng chế luồng quét.`]);
+  };
+
   // Group 1 list
   const group1Domains = [
     "bitly.com", "bitly.com.vn", "by.com.vn", "tinyurl.com", "tinyurl.com.vn",
@@ -132,9 +238,9 @@ export default function App() {
             </span>
             <div>
               <h1 className="font-bold text-lg text-slate-900 tracking-tight flex items-center gap-2">
-                Bypass Shortlink Việt Nam <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">v1.0.0</span>
+                Bypass Shortlink Việt Nam <span className="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full animate-pulse">v3.0.0 PRO</span>
               </h1>
-              <p className="text-xs text-slate-500">Khám phá, đóng gói & test thử tự động link rút gọn</p>
+              <p className="text-xs text-slate-500">Khám phá, đóng gói & phân tích tự động bằng Gemini AI</p>
             </div>
           </div>
 
@@ -309,6 +415,266 @@ export default function App() {
             )}
           </div>
 
+          {/* Scan Controls Section (Interactive Simulator V3.0.0 PRO with Gemini AI) */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col gap-4" id="scan-simulator">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1 px-2.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg uppercase tracking-wide">Mô phỏng 3.0 Pro</span>
+                  <h3 className="font-bold text-lg text-slate-900 tracking-tight">Cấu hình & Tương tác thông minh bằng AI</h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Mô phỏng tiến trình phân tích tự động, điền tham số, chạy giả lập nhấp chuột và đếm ngược.
+                </p>
+              </div>
+
+              {/* Tab options selector */}
+              <div className="flex bg-slate-100 p-1 rounded-xl self-start shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSimulatorTab('manual')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                    simulatorTab === 'manual' 
+                      ? 'bg-white text-emerald-600 shadow-xs' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ⚙️ Cấu hình Thủ công
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimulatorTab('ai')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                    simulatorTab === 'ai' 
+                      ? 'bg-white text-indigo-600 shadow-xs' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ✨ Phân tích bằng Gemini AI
+                </button>
+              </div>
+            </div>
+
+            {simulatorTab === 'manual' ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Từ khóa (Google):</label>
+                    <input
+                      type="text"
+                      value={scanKeyword}
+                      onChange={(e) => setScanKeyword(e.target.value)}
+                      disabled={isScanning}
+                      className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 outline-none transition"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Domain blog đích:</label>
+                    <input
+                      type="text"
+                      value={scanDomain}
+                      onChange={(e) => setScanDomain(e.target.value)}
+                      disabled={isScanning}
+                      className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 outline-none transition"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Trang Google quét:</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={scanPage}
+                      onChange={(e) => setScanPage(parseInt(e.target.value) || 1)}
+                      disabled={isScanning}
+                      className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 outline-none transition"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Nhãn nút lấy mã:</label>
+                    <input
+                      type="text"
+                      value={scanButtonText}
+                      onChange={(e) => setScanButtonText(e.target.value)}
+                      disabled={isScanning}
+                      className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 outline-none transition"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Thời gian chờ (s):</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="300"
+                      value={scanWaitTime}
+                      onChange={(e) => setScanWaitTime(parseInt(e.target.value) || 60)}
+                      disabled={isScanning}
+                      className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 outline-none transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={startSimulation}
+                    disabled={isScanning}
+                    className={`flex-1 py-3 px-4 font-bold text-sm rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                      isScanning 
+                        ? 'bg-slate-100 text-slate-400 border border-slate-200' 
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/10'
+                    }`}
+                  >
+                    <span>🔍</span> Bắt đầu quét tự động
+                  </button>
+                  <button
+                    onClick={stopSimulation}
+                    disabled={!isScanning}
+                    className={`py-3 px-6 font-bold text-sm rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                      !isScanning 
+                        ? 'bg-slate-100 text-slate-350 border border-slate-200 cursor-not-allowed' 
+                        : 'bg-red-500 hover:bg-red-600 text-white shadow-md'
+                    }`}
+                  >
+                    <span>🛑</span> Dừng
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-4 animate-fadeIn">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                    <span>✨</span> Nhập văn bản thô hướng dẫn vượt link (Raw Text/HTML Content):
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={aiRawHtml}
+                    onChange={(e) => setAiRawHtml(e.target.value)}
+                    placeholder="Dán mã nguồn HTML hoặc văn bản hướng dẫn lấy mã vào đây..."
+                    className="w-full p-3 font-mono text-xs text-slate-800 placeholder:text-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 transition outline-none"
+                  />
+                </div>
+
+                <button
+                  onClick={handleAiAnalysis}
+                  disabled={isAiAnalyzing}
+                  className="py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isAiAnalyzing ? (
+                    <>
+                      <span className="h-4 w-4 border-2 border-slate-300 border-t-white rounded-full animate-spin"></span>
+                      Mô hình Gemini-3.5-flash đang giải mã DOM trang...
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span> Chạy Phân Tích Bằng AI
+                    </>
+                  )}
+                </button>
+
+                {aiAnalysisError && (
+                  <div className="p-3 bg-red-50 border border-red-100 text-red-700 text-xs rounded-lg font-medium leading-relaxed">
+                    ❌ Lỗi phân tích: {aiAnalysisError}
+                  </div>
+                )}
+
+                {aiAnalysisResult && (
+                  <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                      <span className="text-indigo-950 font-bold text-xs flex items-center gap-1">
+                        🚀 Tham số trích xuất thành công! (Dịch vụ: {aiAnalysisResult.source})
+                      </span>
+                      <span className="bg-indigo-200 text-indigo-900 text-[10px] font-bold px-2 py-0.5 rounded">
+                        Độ tin cậy: {Math.round((aiAnalysisResult.confidence || 0.8) * 100)}%
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-500 block font-medium">Từ khóa Google:</span>
+                        <span className="font-mono text-indigo-950 font-bold bg-indigo-100/50 px-2 py-0.5 rounded inline-block mt-0.5 break-all">
+                          {aiAnalysisResult.searchKeyword}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block font-medium">Domain blog đích:</span>
+                        <span className="font-mono text-indigo-950 font-bold bg-indigo-100/50 px-2 py-0.5 rounded inline-block mt-0.5 break-all">
+                          {aiAnalysisResult.targetDomainHint}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block font-medium">Click nhãn nút:</span>
+                        <span className="font-mono text-purple-950 font-bold bg-purple-100/50 px-2 py-0.5 rounded inline-block mt-0.5 break-all">
+                          {aiAnalysisResult.buttonText}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block font-medium">Chờ đợi / Google trang:</span>
+                        <span className="font-mono text-slate-800 font-bold mt-0.5 block">
+                          Trang {aiAnalysisResult.expectedPageNumber} / Chờ {aiAnalysisResult.waitTime}s
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-indigo-900 font-medium bg-white/60 p-2.5 rounded-lg border border-indigo-100/60 leading-relaxed italic">
+                      <b>Giải thích từ AI:</b> {aiAnalysisResult.explanation}
+                    </div>
+
+                    <button
+                      onClick={applyAiConfig}
+                      className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      🚀 Đồng bộ hóa và Áp dụng vào bảng điều khiển mô phỏng
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Live Terminal Output Logs */}
+            {(scanLogs.length > 0) && (
+              <div className="bg-slate-950 rounded-xl p-4 border border-emerald-500/30 font-mono text-xs text-slate-300 leading-relaxed max-h-[220px] overflow-y-auto">
+                <div className="flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-widest border-b border-white/10 pb-2 mb-2 font-sans font-bold">
+                  <span>Terminal Hoạt động Quét thời gian thực (Simulator)</span>
+                  <span className={`${isScanning ? 'text-emerald-400' : 'text-slate-500'} flex items-center gap-1`}>
+                    <span className={`w-2.5 h-2.5 rounded-full ${isScanning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
+                    {isScanning ? 'SEARCHING...' : 'IDLE'}
+                  </span>
+                </div>
+                
+                {/* Simulated Log Output lines */}
+                <div className="space-y-1.5">
+                  {scanLogs.map((log, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`${
+                        log.includes("THÀNH CÔNG") 
+                          ? 'text-emerald-400 font-bold' 
+                          : log.includes("🛑") 
+                            ? 'text-amber-400 font-bold' 
+                            : 'text-slate-350'
+                      }`}
+                    >
+                      {log}
+                    </div>
+                  ))}
+                </div>
+                
+                {isScanning && (
+                  <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mt-3.5 border border-white/5">
+                    <div 
+                      className="bg-emerald-500 h-full transition-all duration-500"
+                      style={{ width: `${scanProgress}%` }}
+                    ></div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Interactive Information Tabs */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="flex border-b border-slate-200 bg-slate-50">
@@ -360,7 +726,7 @@ export default function App() {
               {activeTab === 'info' && (
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-base">Quy trình Vượt & Lấy mã Tự động Mới (Phiên bản 2.1.0)</h4>
+                    <h4 className="font-bold text-slate-900 text-base">Quy trình Vượt & Lấy mã Tự động Mới (Phiên bản 2.2.0)</h4>
                     <p className="text-slate-600 text-sm leading-relaxed mt-1">
                       Extension sử dụng thuật toán thông minh tương tác trực tiếp với DOM để thay đổi cơ chế vượt link thô sơ trước đó, cho phép rảnh tay vượt qua các Shortlink Việt Nam phức tạp:
                     </p>

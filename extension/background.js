@@ -1,5 +1,23 @@
-// Background script (Service Worker) for Bypass Shortlink Việt Nam Pro
+// Background script (Service Worker) for Bypass Shortlink Việt Nam Pro 2.2.0
 importScripts('utils.js');
+
+// On startup, load/verify default configurations to avoid empty inputs
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get({
+    enabled: true,
+    scanKeyword: "five 88",
+    scanPage: 2,
+    scanTargetDomain: "afq.com",
+    scanButtonText: "LÀM LẤY MẪN",
+    scanWaitTime: 59,
+    scanActive: false,
+    history: [],
+    runningLogs: []
+  }, (data) => {
+    chrome.storage.local.set(data);
+    pushRealtimeLog("Bypass Shortlink Pro 2.2.0 Engine installed successfully.", "success");
+  });
+});
 
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
   if (details.frameId !== 0) return;
@@ -47,7 +65,7 @@ function resolveGroup1Redirect(shortUrl, tabId) {
     }
   })
   .catch(err => {
-    pushRealtimeLog(`Lỗi kết bối sniffing: ${err.message}`, 'error');
+    pushRealtimeLog(`Lỗi kết nối sniffing: ${err.message}`, 'error');
   });
 }
 
@@ -70,23 +88,48 @@ function finalizeBypass(shortUrl, targetUrl, tabId, method) {
   });
 }
 
-// Lắng nghe tín hiệu từ Content Script
+// Lắng nghe tín hiệu từ Content Script và Popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "logBypassSuccess") {
     const tabId = sender.tab ? sender.tab.id : null;
     logBypass(request.shortUrl, request.targetUrl, request.method);
-    pushRealtimeLog(`Vượt qua link thành công qua Content Script: ${getDomainName(request.targetUrl)}`, 'success');
+    pushRealtimeLog(`Vượt qua link thành công: ${getDomainName(request.targetUrl)}`, 'success');
     if (tabId) {
       chrome.tabs.update(tabId, { url: request.targetUrl });
     }
     sendResponse({ success: true });
   } else if (request.action === "openGoogleSearch") {
-    // Mở Google Search để tìm và vượt link tự động
     pushRealtimeLog(`Mở tab Google Search tự động cho từ khóa: ${request.keyword}`, 'info');
     chrome.tabs.create({ url: `https://www.google.com/search?q=${encodeURIComponent(request.keyword)}` });
     sendResponse({ success: true });
   } else if (request.action === "logFromContent") {
     pushRealtimeLog(request.message, request.logType || 'info');
+    sendResponse({ success: true });
+  } else if (request.action === "forceBypassTab") {
+    pushRealtimeLog(`Yêu cầu cưỡng chế quét trang: ${request.url}`, 'info');
+    resolveGroup1Redirect(request.url, request.tabId);
+    sendResponse({ success: true });
+  } else if (request.action === "startAutoScan") {
+    chrome.storage.local.get({
+      scanKeyword: "five 88",
+      scanPage: 2
+    }, (data) => {
+      pushRealtimeLog(`Bắt đầu chuỗi quét tự động cho từ khóa: "${data.scanKeyword}" (Hỗ trợ quét qua trang ${data.scanPage})`, 'success');
+      
+      // Khởi chạy tìm kiếm Google ở trang 1
+      const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(data.scanKeyword)}`;
+      chrome.tabs.create({ url: googleUrl }, (tab) => {
+        chrome.storage.local.set({
+          scanActive: true,
+          awaitingBlogCode: false,
+          currentGoogleTabId: tab.id
+        });
+      });
+    });
+    sendResponse({ success: true });
+  } else if (request.action === "stopAutoScan") {
+    chrome.storage.local.set({ scanActive: false, awaitingBlogCode: false });
+    pushRealtimeLog("Đã dừng tiến trình quét tự động.", "warn");
     sendResponse({ success: true });
   }
   return true;
