@@ -255,7 +255,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "analyzeWithAI") {
     pushRealtimeLog("Bắt đầu phân tích cấu trúc trang bằng Gemini AI...", "info");
     
-    chrome.storage.local.get({ geminiApiKey: "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" }, (data) => {
+    chrome.storage.local.get({ geminiApiKey: "AQ.Ab8RN6KBnuiBBDQBVGIVb5oC0PmBvoVb2GyIlPLHh_pj8Ma9Hw" }, (data) => {
       const apiKey = data.geminiApiKey;
       if (!apiKey) {
         pushRealtimeLog("Lỗi: Bạn chưa cấu hình Gemini API Key.", "error");
@@ -311,7 +311,7 @@ DOM HTML Content:
         });
         
       } else {
-        const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}\`;
+        const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=\${apiKey}\`;
         const promptText = \`Bạn là AI phân tích DOM HTML của một trang shortlink.
 Trích xuất dưới dạng JSON các thông tin:
 - searchKeyword: Từ khóa dùng để tìm kiếm Google (ví dụ: cakhia, bong da).
@@ -384,7 +384,7 @@ DOM HTML Content:
         sendResponse({ success: false, error: err.message });
       });
     } else {
-      const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}\`;
+      const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=\${apiKey}\`;
       fetch(fetchUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -397,7 +397,7 @@ DOM HTML Content:
         if (resData.error) {
           throw new Error(resData.error.message);
         }
-        sendResponse({ success: true, message: "Kết nối thành công (Google Gemini 1.5)!" });
+        sendResponse({ success: true, message: "Kết nối thành công (Google Gemini 3.5)!" });
       })
       .catch(err => {
         sendResponse({ success: false, error: err.message });
@@ -1343,7 +1343,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     scanButtonText: "LÀM LẤY MẪN",
     scanWaitTime: 59,
     scanActive: false,
-    geminiApiKey: "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"
+    geminiApiKey: "AQ.Ab8RN6KBnuiBBDQBVGIVb5oC0PmBvoVb2GyIlPLHh_pj8Ma9Hw"
   }, (data) => {
     powerToggle.checked = data.enabled !== false;
     

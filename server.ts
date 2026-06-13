@@ -9,11 +9,32 @@ dotenv.config();
 
 // Initialize Gemini Client safely
 let ai: GoogleGenAI | null = null;
-const decFallback = "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";
-const apiKey = decFallback;
-let isOpenRouter = true;
+const decFallback = "AQ.Ab8RN6KBnuiBBDQBVGIVb5oC0PmBvoVb2GyIlPLHh_pj8Ma9Hw";
+const apiKey = process.env.GEMINI_API_KEY || decFallback;
+let isOpenRouter = false;
 
-console.log("[OpenRouter] API key override active. Using OpenRouter endpoint as default engine.");
+if (apiKey) {
+  if (apiKey.startsWith("sk-or-")) {
+    isOpenRouter = true;
+    console.log("[OpenRouter] API key detected. Using OpenRouter endpoint as default engine.");
+  } else {
+    try {
+      ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+      console.log("[Gemini] SDK initialized successfully with key.");
+    } catch (err) {
+      console.error("[Gemini] Failed to initialize GoogleGenAI:", err);
+    }
+  }
+} else {
+  console.log("[Gemini] No GEMINI_API_KEY found. Using Heuristic NLP fallback as default engine.");
+}
 
 // Local NLP Heuristics fallback engine (Option C / Resilient architecture)
 function runHeuristicAnalysis(htmlContent: string) {
@@ -143,7 +164,7 @@ async function startServer() {
       try {
         const tempClient = new GoogleGenAI({ apiKey: inputKey });
         const result = await tempClient.models.generateContent({
-          model: "gemini-1.5-flash",
+          model: "gemini-3.5-flash",
           contents: "ping",
           config: {
             maxOutputTokens: 5
