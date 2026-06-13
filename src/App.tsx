@@ -52,6 +52,32 @@ Bước 4: Chờ countdown 60 giây để thu được mã bypass.`);
   const [aiAnalysisResult, setAiAnalysisResult] = useState<any>(null);
   const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
 
+  // API key connection testing state
+  const [isTestingApi, setIsTestingApi] = useState(false);
+  const [testApiResult, setTestApiResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
+
+  const handleTestAiConnection = async () => {
+    setIsTestingApi(true);
+    setTestApiResult(null);
+    try {
+      const resp = await fetch('/api/gemini/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        setTestApiResult({ success: true, message: data.message });
+      } else {
+        setTestApiResult({ success: false, error: data.error || "Gặp lỗi phản hồi từ máy chủ." });
+      }
+    } catch (err: any) {
+      setTestApiResult({ success: false, error: "Không kết nối được tới dịch vụ test của máy chủ." });
+    } finally {
+      setIsTestingApi(false);
+    }
+  };
+
   const handleAiAnalysis = async () => {
     if (!aiRawHtml.trim()) return;
     setIsAiAnalyzing(true);
@@ -558,22 +584,55 @@ Bước 4: Chờ countdown 60 giây để thu được mã bypass.`);
                   />
                 </div>
 
-                <button
-                  onClick={handleAiAnalysis}
-                  disabled={isAiAnalyzing}
-                  className="py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isAiAnalyzing ? (
-                    <>
-                      <span className="h-4 w-4 border-2 border-slate-300 border-t-white rounded-full animate-spin"></span>
-                      Mô hình Gemini-3.5-flash đang giải mã DOM trang...
-                    </>
-                  ) : (
-                    <>
-                      <span>✨</span> Chạy Phân Tích Bằng AI
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleAiAnalysis}
+                    disabled={isAiAnalyzing || isTestingApi}
+                    className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isAiAnalyzing ? (
+                      <>
+                        <span className="h-4 w-4 border-2 border-slate-300 border-t-white rounded-full animate-spin"></span>
+                        Mô hình Gemini-3.5-flash đang giải mã DOM trang...
+                      </>
+                    ) : (
+                      <>
+                        <span>✨</span> Chạy Phân Tích Bằng AI
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleTestAiConnection}
+                    disabled={isAiAnalyzing || isTestingApi}
+                    className="py-3 px-4 bg-slate-700 hover:bg-slate-800 active:bg-slate-900 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isTestingApi ? (
+                      <>
+                        <span className="h-4 w-4 border-2 border-slate-300 border-t-white rounded-full animate-spin"></span>
+                        Đang thử kết nối...
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡</span> Test AI Connection
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {testApiResult && (
+                  <div className={`p-3 border rounded-xl text-xs font-medium transition ${
+                    testApiResult.success 
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                      : 'bg-red-50 border-red-200 text-red-800'
+                  }`}>
+                    {testApiResult.success ? (
+                      <div>🟢 <b>Thành công:</b> {testApiResult.message}</div>
+                    ) : (
+                      <div>🔴 <b>Lỗi kết nối:</b> {testApiResult.error}</div>
+                    )}
+                  </div>
+                )}
 
                 {aiAnalysisError && (
                   <div className="p-3 bg-red-50 border border-red-100 text-red-700 text-xs rounded-lg font-medium leading-relaxed">

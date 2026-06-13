@@ -350,6 +350,60 @@ DOM HTML Content:
       }
     });
     return true; // async response
+  } else if (request.action === "testAIConnection") {
+    const apiKey = request.apiKey;
+    if (!apiKey) {
+      sendResponse({ success: false, error: "Chưa cung cấp API Key" });
+      return true;
+    }
+    const isOpenRouter = apiKey.startsWith("sk-or-");
+    if (isOpenRouter) {
+      const fetchUrl = "https://openrouter.ai/api/v1/chat/completions";
+      fetch(fetchUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "user", content: "ping" }
+          ],
+          max_tokens: 5
+        })
+      })
+      .then(r => r.json())
+      .then(resData => {
+        if (resData.error) {
+          throw new Error(resData.error.message || JSON.stringify(resData.error));
+        }
+        sendResponse({ success: true, message: "Kết nối thành công (OpenRouter Gemini 2.5)!" });
+      })
+      .catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
+    } else {
+      const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}\`;
+      fetch(fetchUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: "ping" }] }]
+        })
+      })
+      .then(r => r.json())
+      .then(resData => {
+        if (resData.error) {
+          throw new Error(resData.error.message);
+        }
+        sendResponse({ success: true, message: "Kết nối thành công (Google Gemini 1.5)!" });
+      })
+      .catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
+    }
+    return true; // async response
   } else if (request.action === "stopAutoScan") {
     chrome.storage.local.set({ scanActive: false, awaitingBlogCode: false });
     pushRealtimeLog("Đã dừng tiến trình quét tự động.", "warn");
@@ -871,6 +925,12 @@ DOM HTML Content:
             <button id="save-api-key-btn" class="btn btn-primary" style="flex: none; padding: 6px; width: 60px;">Lưu</button>
           </div>
           <span id="api-key-status" style="font-size: 10px; color: #10b981; display: none;">Đã lưu Key!</span>
+          <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <button id="test-ai-conn-btn" class="btn" style="background-color: #475569; color: white; border: none; padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 4px; font-weight: bold; font-family: sans-serif;">
+              ⚡ Test AI Connection
+            </button>
+            <span id="test-ai-status" style="font-size: 11px; font-weight: bold; color: #64748b; font-family: sans-serif;">Chưa kiểm tra</span>
+          </div>
         </div>
 
         <button class="btn btn-ai" id="analyze-ai-btn" style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; width: 100%; border: none;">
@@ -1270,6 +1330,8 @@ input:checked + .slider:before { transform: translateX(20px); }
   const geminiApiKeyInput = document.getElementById('gemini-api-key');
   const saveApiKeyBtn = document.getElementById('save-api-key-btn');
   const apiKeyStatus = document.getElementById('api-key-status');
+  const testAiConnBtn = document.getElementById('test-ai-conn-btn');
+  const testAiStatus = document.getElementById('test-ai-status');
 
   chrome.storage.local.get({
     enabled: true,
@@ -1306,6 +1368,37 @@ input:checked + .slider:before { transform: translateX(20px); }
       chrome.storage.local.set({ geminiApiKey: geminiApiKeyInput.value }, () => {
         apiKeyStatus.style.display = 'block';
         setTimeout(() => apiKeyStatus.style.display = 'none', 2000);
+      });
+    });
+  }
+
+  if (testAiConnBtn && testAiStatus && geminiApiKeyInput) {
+    testAiConnBtn.addEventListener('click', () => {
+      const currentKey = geminiApiKeyInput.value.trim();
+      if (!currentKey) {
+        testAiStatus.textContent = "Thiếu API Key!";
+        testAiStatus.style.color = "#ef4444";
+        return;
+      }
+      testAiStatus.textContent = "Đang kết nối...";
+      testAiStatus.style.color = "#64748b";
+      testAiConnBtn.disabled = true;
+
+      chrome.runtime.sendMessage({
+        action: "testAIConnection",
+        apiKey: currentKey
+      }, (response) => {
+        testAiConnBtn.disabled = false;
+        if (response && response.success) {
+          testAiStatus.textContent = "Kết nối OK! 🟢";
+          testAiStatus.style.color = "#10b981";
+        } else {
+          testAiStatus.textContent = "Thất bại 🔴";
+          testAiStatus.style.color = "#ef4444";
+          if (response && response.error) {
+            console.error("[Test Connection Error]", response.error);
+          }
+        }
       });
     });
   }
