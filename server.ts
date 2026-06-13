@@ -9,19 +9,27 @@ dotenv.config();
 
 // Initialize Gemini Client safely
 let ai: GoogleGenAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  try {
-    ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
+const apiKey = process.env.GEMINI_API_KEY || "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";
+let isOpenRouter = false;
+
+if (apiKey) {
+  if (apiKey.startsWith("sk-or-")) {
+    isOpenRouter = true;
+    console.log("[OpenRouter] API key detected. Using OpenRouter endpoint as default engine.");
+  } else {
+    try {
+      ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
         }
-      }
-    });
-    console.log("[Gemini] SDK initialized successfully with key.");
-  } catch (err) {
-    console.error("[Gemini] Failed to initialize GoogleGenAI:", err);
+      });
+      console.log("[Gemini] SDK initialized successfully with key.");
+    } catch (err) {
+      console.error("[Gemini] Failed to initialize GoogleGenAI:", err);
+    }
   }
 } else {
   console.log("[Gemini] No GEMINI_API_KEY found in process.env. Using Heuristic NLP fallback as default engine.");
@@ -126,8 +134,55 @@ async function startServer() {
 
     console.log(`[AI Analyzer] Received request to analyze content (Length: ${html.length} chars). URL: ${url || "unknown"}`);
     
-    // Check if we can use Gemini SDK
-    if (ai) {
+    // Check if we can use OpenRouter or Gemini SDK
+    if (isOpenRouter && apiKey) {
+      try {
+        console.log("[OpenRouter] Calling OpenRouter endpoint with model google/gemini-2.5-flash...");
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "HTTP-Referer": "https://ai.studio/build",
+            "X-Title": "Bypass Shortlink Pro"
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "system",
+                content: "You are a cybersecurity expert and expert DOM scraper for a Vietnamese browser extension link-unblocker. " +
+                  "Your job is to read the provided text or HTML content from a Vietnamese shortlink verification page " +
+                  "and automatically extract metadata instruction keywords. You must output a JSON object containing EXACTLY these keys: " +
+                  "searchKeyword, targetDomainHint, expectedPageNumber, buttonText, waitTime, actionType, confidence, explanation. " +
+                  "Return strictly JSON and nothing else."
+              },
+              {
+                role: "user",
+                content: `Analyze the following webpage content carefully:\n\n${html.slice(0, 15000)}`
+              }
+            ],
+            response_format: { type: "json_object" }
+          })
+        });
+
+        const resData: any = await response.json();
+        if (resData.error) {
+          throw new Error(resData.error.message || JSON.stringify(resData.error));
+        }
+
+        const rawText = resData.choices[0].message.content;
+        const parsed = JSON.parse(rawText.trim());
+        res.json({
+          success: true,
+          ...parsed,
+          source: "OpenRouter (Gemini 2.5 Flash)"
+        });
+        return;
+      } catch (orError: any) {
+        console.warn("[AI Analyzer] OpenRouter API failed or returned error, falling back to heuristics:", orError);
+      }
+    } else if (ai) {
       try {
         const responseSchema = {
           type: Type.OBJECT,

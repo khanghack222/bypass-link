@@ -263,8 +263,56 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return;
       }
       
-      const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}\`;
-      const promptText = \`Bạn là AI phân tích DOM HTML của một trang shortlink.
+      const isOpenRouter = apiKey.startsWith("sk-or-");
+      
+      if (isOpenRouter) {
+        const fetchUrl = "https://openrouter.ai/api/v1/chat/completions";
+        const promptText = \`Bạn là AI phân tích DOM HTML của một trang shortlink.
+Trích xuất dưới dạng JSON các thông tin:
+- searchKeyword: Từ khóa dùng để tìm kiếm Google (ví dụ: cakhia, bong da).
+- targetDomainHint: Tên miền đích cần click (ví dụ: afq.com).
+- expectedPageNumber: Ước lượng hiển thị ở trang mấy của Google (1, 2, 3...)
+- buttonText: Dòng chữ trên nút cần nhấn (ví dụ: "LẤY MÃ", "LÀM LẤY MẪN").
+- waitTime: Thời gian phải chờ đếm ngược (đơn vị: giây).
+- confidence: Độ tự tin (0-1).
+- explanation: Giải thích ngắn gọn lý do chọn cấu hình.
+
+Chỉ trả về định dạng JSON thuần tuý.
+DOM HTML Content:
+\${request.html}\`;
+
+        fetch(fetchUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + apiKey
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "user", content: promptText }
+            ],
+            response_format: { type: "json_object" }
+          })
+        })
+        .then(r => r.json())
+        .then(resData => {
+          if (resData.error) throw new Error(resData.error.message || JSON.stringify(resData.error));
+          
+          const rawText = resData.choices[0].message.content;
+          const cleanedText = rawText.replace(/\\\`\\\`\\\`json/g, '').replace(/\\\`\\\`\\\`/g, '').trim();
+          const configJson = JSON.parse(cleanedText);
+          
+          sendResponse({ success: true, data: configJson });
+        })
+        .catch(err => {
+          pushRealtimeLog("Lỗi kết nối OpenRouter AI: " + err.message, "error");
+          sendResponse({ success: false, error: "Không kết nối được tới dịch vụ AI (OpenRouter): " + err.message });
+        });
+        
+      } else {
+        const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}\`;
+        const promptText = \`Bạn là AI phân tích DOM HTML của một trang shortlink.
 Trích xuất dưới dạng JSON các thông tin:
 - searchKeyword: Từ khóa dùng để tìm kiếm Google (ví dụ: cakhia, bong da).
 - targetDomainHint: Tên miền đích cần click (ví dụ: afq.com).
@@ -278,27 +326,28 @@ Chỉ trả về định dạng JSON thuần tuý, không có blockquote markdow
 DOM HTML Content:
 \${request.html}\`;
 
-      fetch(fetchUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }]
+        fetch(fetchUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }]
+          })
         })
-      })
-      .then(r => r.json())
-      .then(resData => {
-        if (resData.error) throw new Error(resData.error.message);
-        
-        const rawText = resData.candidates[0].content.parts[0].text;
-        const cleanedText = rawText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
-        const configJson = JSON.parse(cleanedText);
-        
-        sendResponse({ success: true, data: configJson });
-      })
-      .catch(err => {
-        pushRealtimeLog("Lỗi kết nối Gemini AI: " + err.message, "error");
-        sendResponse({ success: false, error: "Không kết nối được tới dịch vụ AI: " + err.message });
-      });
+        .then(r => r.json())
+        .then(resData => {
+          if (resData.error) throw new Error(resData.error.message);
+          
+          const rawText = resData.candidates[0].content.parts[0].text;
+          const cleanedText = rawText.replace(/\\\`\\\`\\\`json/g, '').replace(/\\\`\\\`\\\`/g, '').trim();
+          const configJson = JSON.parse(cleanedText);
+          
+          sendResponse({ success: true, data: configJson });
+        })
+        .catch(err => {
+          pushRealtimeLog("Lỗi kết nối Gemini AI: " + err.message, "error");
+          sendResponse({ success: false, error: "Không kết nối được tới dịch vụ AI: " + err.message });
+        });
+      }
     });
     return true; // async response
   } else if (request.action === "stopAutoScan") {
