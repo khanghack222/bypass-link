@@ -255,7 +255,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "analyzeWithAI") {
     pushRealtimeLog("Bắt đầu phân tích cấu trúc trang bằng Gemini AI...", "info");
     
-    chrome.storage.local.get({ geminiApiKey: "" }, (data) => {
+    chrome.storage.local.get({ geminiApiKey: "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" }, (data) => {
       const apiKey = data.geminiApiKey;
       if (!apiKey) {
         pushRealtimeLog("Lỗi: Bạn chưa cấu hình Gemini API Key.", "error");
@@ -1343,7 +1343,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     scanButtonText: "LÀM LẤY MẪN",
     scanWaitTime: 59,
     scanActive: false,
-    geminiApiKey: ""
+    geminiApiKey: "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"
   }, (data) => {
     powerToggle.checked = data.enabled !== false;
     
@@ -1618,7 +1618,7 @@ input:checked + .slider:before { transform: translateX(20px); }
           target: { tabId: activeTab.id },
           func: () => {
             return {
-              html: document.body.innerText + "\n\n" + (document.documentElement.outerHTML || ""),
+              html: document.body.innerText + "\\n\\n" + (document.documentElement.outerHTML || ""),
               url: window.location.href
             };
           }
