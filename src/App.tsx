@@ -320,7 +320,7 @@ export default function App() {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Tính Năng & Cơ Chế
+                Cơ Chế Lấy Mã Tự Động
               </button>
               <button
                 onClick={() => setActiveTab('domains')}
@@ -340,7 +340,7 @@ export default function App() {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Mã Nguồn Chi Tiết
+                Mã Nguồn (JS / Python Script)
               </button>
               <button
                 onClick={() => setActiveTab('steps')}
@@ -350,7 +350,7 @@ export default function App() {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Cách Cài Đặt
+                Cách sử dụng
               </button>
             </div>
 
@@ -360,44 +360,80 @@ export default function App() {
               {activeTab === 'info' && (
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-base">Cơ chế hoạt động của Extension</h4>
+                    <h4 className="font-bold text-slate-900 text-base">Quy trình Vượt & Lấy mã Tự động Mới (Phiên bản 2.1.0)</h4>
                     <p className="text-slate-600 text-sm leading-relaxed mt-1">
-                      Extension này tự phân tách các liên kết rút gọn thành hai mô hình logic để tối ưu hóa hiệu năng tối đa mà không gây chậm tab duyệt web khác của người dùng.
+                      Extension sử dụng thuật toán thông minh tương tác trực tiếp với DOM để thay đổi cơ chế vượt link thô sơ trước đó, cho phép rảnh tay vượt qua các Shortlink Việt Nam phức tạp:
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 flex gap-3">
-                      <span className="p-2.5 bg-emerald-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0">
+                      <span className="p-2.5 bg-emerald-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0 font-bold">
                         1
                       </span>
                       <div>
-                        <h5 className="font-bold text-emerald-950 text-sm">Nhóm 1: Bypass Nền Thầm Lặng</h5>
+                        <h5 className="font-bold text-emerald-950 text-sm">Tự động Quét Chỉ dẫn & Mở Google</h5>
                         <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                          Chạy thầm lặng trong <b>Background Service Worker</b>, sử dụng API headless fetch để liên tục theo dõi headers chuyển hướng HTTP 301/302, thẻ HTML Meta refresh, hoặc lệnh JavaScript Location. Tự động chuyển trang trước cả khi tab kịp hiển thị!
+                          Khi bạn truy cập shortlink (trafficvn, link1s, v.v.), script phân tích hướng dẫn lấy từ khóa (ví dụ: <b className="text-emerald-700">"cakhiatv"</b>) và địa chỉ trang đích. Sau đó tự động truy cập hoặc mở Google Search chỉ trong 1 giây.
                         </p>
                       </div>
                     </div>
 
                     <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-3">
-                      <span className="p-2.5 bg-blue-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0">
+                      <span className="p-2.5 bg-blue-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0 font-bold">
                         2
                       </span>
                       <div>
-                        <h5 className="font-bold text-blue-950 text-sm">Nhóm 2: Content Scripts Tương Tác</h5>
+                        <h5 className="font-bold text-blue-950 text-sm">Nhận diện & Click Web Đích</h5>
                         <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                          Chạy trong tài nguyên trang. Tự động tắt popup quảng cáo, giả lập nhấp chuột vào nút "Get Link" / "Tiếp Tục", giải mã các tham số Base64 ẩn trong URL truy vấn, và tự nộp các form chuyển hướng ngầm (bypassing countdown hoàn hảo).
+                          Mở trang Google, định vị chính xác vị trí bài viết có tiêu đề hoặc tên miền khớp với chỉ dẫn (như <b className="text-blue-700">"cakhiatv9.com"</b>) và thực hiện nhấp chuột chuyển hướng an toàn.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100 flex gap-3">
+                      <span className="p-2.5 bg-purple-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0 font-bold">
+                        3
+                      </span>
+                      <div>
+                        <h5 className="font-bold text-purple-950 text-sm">Tự động Cuộn (Auto Scroll) trang</h5>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          Trang web đích bắt buộc cuộn chuột để kích hoạt bộ đếm ngược. Script tự động cuộn trang lướt lên xuống mô phỏng lướt ngẫu nhiên của người dùng thật để countdown không bao giờ bị dừng.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex gap-3">
+                      <span className="p-2.5 bg-amber-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0 font-bold">
+                        4
+                      </span>
+                      <div>
+                        <h5 className="font-bold text-amber-950 text-sm">Đếm ngược (Countdown) & Lấy mã</h5>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          Tự kích hoạt nút <b className="text-amber-700 font-semibold">"Vào đại hết thời gian"</b>, chờ khoảng thời gian 15-30s kết thúc, trích xuất mã (dạng text hoặc ảnh bằng công nghệ OCR).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100 flex gap-3 md:col-span-2">
+                      <span className="p-2.5 bg-teal-500 text-white rounded-lg h-10 w-10 flex items-center justify-center shrink-0 font-bold">
+                        5 & 6
+                      </span>
+                      <div>
+                        <h5 className="font-bold text-teal-950 text-sm">Dán mã Tự động & Vượt qua Cloudflare bảo mật</h5>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          Lưu trữ mã vào bộ nhớ đệm cục bộ, tự động dán mã vào ô input, nhấp xác nhận để đi tiếp. Hỗ trợ thông báo nếu bạn gặp trang Turnstile bảo mật để an toàn 100%. Không sử dụng Proxy hay VPN bên thứ 3 tránh bị ban.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-800 flex items-start gap-2.5">
-                    <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-350 flex items-start gap-2.5">
+                    <Code className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <h5 className="font-bold">Chính sách Bảo mật và An toàn Tuyệt đối</h5>
-                      <p className="mt-0.5 leading-relaxed text-amber-700/90">
-                        Không giống như nhiều extension rút gọn thương mại thu thập logs duyệt web của bạn, toàn bộ code nguồn của chúng tôi mở rộng độc lập, không kết nối với bất kỳ cơ sở dữ liệu tracking hoặc analytics bên ngoài nào của bên thứ ba.
+                      <h5 className="font-bold text-white">Đi kèm tệp tin chạy ngầm Python Script chuyên dụng</h5>
+                      <p className="mt-1 leading-relaxed text-slate-350">
+                        Ngoài tiện ích mở rộng Chrome/Firefox, phiên bản 2.1.0 bổ sung tệp Python Script (sử dụng <b>Selenium & Tesseract OCR</b>) cho phép tự động hóa toàn diện bằng một click từ Terminal của bạn!
                       </p>
                     </div>
                   </div>
