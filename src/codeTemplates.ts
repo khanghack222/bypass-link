@@ -254,21 +254,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
   } else if (request.action === "analyzeWithAI") {
     pushRealtimeLog("Bắt đầu phân tích cấu trúc trang bằng Gemini AI...", "info");
-    const apiHost = "https://ais-dev-ahncksq4yupzf6qdq4vgeu-983848189961.asia-southeast1.run.app";
-    fetch(apiHost + "/api/gemini/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ html: request.html, url: request.url })
-    })
-    .then(r => r.json())
-    .then(resData => {
-      sendResponse({ success: true, ...resData });
-    })
-    .catch(err => {
-      pushRealtimeLog("Lỗi phân tích AI: " + err.message, "error");
-      sendResponse({ success: false, error: err.message });
+    
+    chrome.storage.local.get({ geminiApiKey: "" }, (data) => {
+      const apiKey = data.geminiApiKey;
+      if (!apiKey) {
+        pushRealtimeLog("Lỗi: Bạn chưa cấu hình Gemini API Key.", "error");
+        sendResponse({ success: false, error: "Missing API Key" });
+        return;
+      }
+      
+      const fetchUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}\`;
+      const promptText = \`Bạn là AI phân tích DOM HTML của một trang shortlink.
+Trích xuất dưới dạng JSON các thông tin:
+- searchKeyword: Từ khóa dùng để tìm kiếm Google (ví dụ: cakhia, bong da).
+- targetDomainHint: Tên miền đích cần click (ví dụ: afq.com).
+- expectedPageNumber: Ước lượng hiển thị ở trang mấy của Google (1, 2, 3...)
+- buttonText: Dòng chữ trên nút cần nhấn (ví dụ: "LẤY MÃ", "LÀM LẤY MẪN").
+- waitTime: Thời gian phải chờ đếm ngược (đơn vị: giây).
+- confidence: Độ tự tin (0-1).
+- explanation: Giải thích ngắn gọn lý do chọn cấu hình.
+
+Chỉ trả về định dạng JSON thuần tuý, không có blockquote markdown.
+DOM HTML Content:
+\${request.html}\`;
+
+      fetch(fetchUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }]
+        })
+      })
+      .then(r => r.json())
+      .then(resData => {
+        if (resData.error) throw new Error(resData.error.message);
+        
+        const rawText = resData.candidates[0].content.parts[0].text;
+        const cleanedText = rawText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+        const configJson = JSON.parse(cleanedText);
+        
+        sendResponse({ success: true, data: configJson });
+      })
+      .catch(err => {
+        pushRealtimeLog("Lỗi kết nối Gemini AI: " + err.message, "error");
+        sendResponse({ success: false, error: "Không kết nối được tới dịch vụ AI: " + err.message });
+      });
     });
-    return true; // Keep message port open for async response
+    return true; // async response
   } else if (request.action === "stopAutoScan") {
     chrome.storage.local.set({ scanActive: false, awaitingBlogCode: false });
     pushRealtimeLog("Đã dừng tiến trình quét tự động.", "warn");
@@ -764,7 +796,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         <div class="scan-actions-row">
           <button class="btn btn-emerald" id="start-scan-btn">
-            <span>🔍</span> Bắt đầu quét
+            <span>🔍</span> Bắt đầu quét (LẤY MẪU)
           </button>
           <button class="btn btn-stop" id="stop-scan-btn" disabled>
             <span>🛑</span> Dừng quét
@@ -783,6 +815,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         <div class="section-title">✨ Trí Tuệ Nhân Tạo Tự Động</div>
         <p class="ai-helper-desc" style="font-size: 11px; margin: 0 0 8px 0; color: #64748b; line-height: 1.4;">Hệ thống tự động phân tích cấu trúc DOM trang hiện tại bằng Gemini AI để suy luận từ khóa tìm kiếm, blog đích, hành động, và nhãn nút lấy mã vượt link.</p>
         
+        <div class="input-group" style="margin-bottom: 8px;">
+          <label for="gemini-api-key">Gemini API Key (Bắt buộc):</label>
+          <div style="display: flex; gap: 4px;">
+            <input type="password" id="gemini-api-key" placeholder="AIzaSy..." style="flex: 1;">
+            <button id="save-api-key-btn" class="btn btn-primary" style="flex: none; padding: 6px; width: 60px;">Lưu</button>
+          </div>
+          <span id="api-key-status" style="font-size: 10px; color: #10b981; display: none;">Đã lưu Key!</span>
+        </div>
+
         <button class="btn btn-ai" id="analyze-ai-btn" style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; width: 100%; border: none;">
           ✨ Phân tích trang hiện tại bằng AI
         </button>
@@ -1176,6 +1217,11 @@ input:checked + .slider:before { transform: translateX(20px); }
   const stopScanBtn = document.getElementById('stop-scan-btn');
   const statusBadge = document.getElementById('status-badge');
 
+  // AI API fields
+  const geminiApiKeyInput = document.getElementById('gemini-api-key');
+  const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+  const apiKeyStatus = document.getElementById('api-key-status');
+
   chrome.storage.local.get({
     enabled: true,
     history: [],
@@ -1185,7 +1231,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     scanPage: 2,
     scanButtonText: "LÀM LẤY MẪN",
     scanWaitTime: 59,
-    scanActive: false
+    scanActive: false,
+    geminiApiKey: ""
   }, (data) => {
     powerToggle.checked = data.enabled !== false;
     
@@ -1194,12 +1241,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     scanPageInput.value = data.scanPage;
     scanButtonTextInput.value = data.scanButtonText;
     scanWaitTimeInput.value = data.scanWaitTime;
+    
+    if (geminiApiKeyInput) {
+      geminiApiKeyInput.value = data.geminiApiKey;
+    }
 
     updateScannerUI(data.scanActive);
 
     renderHistory(data.history || []);
     renderLogs(data.runningLogs || []);
   });
+
+  if (saveApiKeyBtn && geminiApiKeyInput) {
+    saveApiKeyBtn.addEventListener('click', () => {
+      chrome.storage.local.set({ geminiApiKey: geminiApiKeyInput.value }, () => {
+        apiKeyStatus.style.display = 'block';
+        setTimeout(() => apiKeyStatus.style.display = 'none', 2000);
+      });
+    });
+  }
 
   const inputsToSave = [
     { el: scanKeywordInput, key: 'scanKeyword' },
@@ -1406,6 +1466,10 @@ input:checked + .slider:before { transform: translateX(20px); }
         }
 
         const activeTab = tabs[0];
+        if (!geminiApiKeyInput.value.trim()) {
+           showAIError("Vui lòng điền Gemini API Key trước khi quét!");
+           return;
+        }
         
         // Inject script to read DOM content
         chrome.scripting.executeScript({
@@ -1485,7 +1549,8 @@ input:checked + .slider:before { transform: translateX(20px); }
   function showAIError(msg) {
     aiLoading.style.display = 'none';
     analyzeAIBtn.disabled = false;
-    alert("Có lỗi xảy ra: " + msg);
+    pushRealtimeLog("Lỗi AI: " + msg, "error");
+    alert("Lỗi AI: " + msg);
   }
 
   // Apply AI parameters and run unblock trigger
