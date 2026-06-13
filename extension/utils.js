@@ -1,5 +1,4 @@
 // Extension utility helpers for Bypass Shortlink Việt Nam
-
 const BYPASS_DOMAINS_GROUP1 = [
   "bitly.com", "bitly.com.vn", "by.com.vn", "tinyurl.com", "tinyurl.com.vn",
   "new.tinyurl.com.vn", "rutgonlink.vn", "rut.vn", "go2.vn", "bom.so", "vnlink.top",
@@ -29,7 +28,6 @@ function logBypass(shortUrl, targetUrl, method) {
   const timestamp = new Date().toLocaleString('vi-VN');
   chrome.storage.local.get({ history: [], logsCount: 0 }, (data) => {
     let history = data.history || [];
-    // Keep last 100 bypass items
     history.unshift({
       id: Date.now() + Math.random().toString(36).substr(2, 5),
       shortUrl,
@@ -37,8 +35,8 @@ function logBypass(shortUrl, targetUrl, method) {
       method,
       timestamp
     });
-    if (history.length > 100) {
-      history = history.slice(0, 100);
+    if (history.length > 50) {
+      history = history.slice(0, 50);
     }
     chrome.storage.local.set({ 
       history, 
@@ -47,7 +45,16 @@ function logBypass(shortUrl, targetUrl, method) {
   });
 }
 
-// Global configuration status
+function pushRealtimeLog(message, type = 'info') {
+  const time = new Date().toLocaleTimeString('vi-VN');
+  chrome.storage.local.get({ runningLogs: [] }, (data) => {
+    const logs = data.runningLogs || [];
+    logs.push({ text: `[${time}] ${message}`, type, timestamp: Date.now() });
+    if (logs.length > 100) logs.shift();
+    chrome.storage.local.set({ runningLogs: logs });
+  });
+}
+
 function isExtensionEnabled(callback) {
   chrome.storage.local.get({ enabled: true }, (data) => {
     callback(data.enabled !== false);

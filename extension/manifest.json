@@ -1,21 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "Bypass Shortlink Việt Nam",
-  "version": "1.0.0",
-  "description": "Tự động phát hiện và chuyển hướng các link rút gọn phổ biến tại Việt Nam và Quốc tế về link gốc.",
+  "name": "Bypass Shortlink Việt Nam Auto-Get",
+  "version": "2.1.0",
+  "description": "Tự động lấy mã vượt link thông minh (Tự tìm kiếm Google, cuộn trang, countdown và tự động điền mã).",
   "permissions": [
     "storage",
     "webNavigation",
     "tabs",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
+    "*://*.google.com/*",
+    "*://*.google.com.vn/*",
     "*://*.bitly.com/*",
     "*://*.bitly.com.vn/*",
     "*://*.by.com.vn/*",
     "*://*.tinyurl.com/*",
     "*://*.tinyurl.com.vn/*",
-    "*://*.new.tinyurl.com.vn/*",
     "*://*.rutgonlink.vn/*",
     "*://*.rut.vn/*",
     "*://*.go2.vn/*",
@@ -69,6 +71,8 @@
   "content_scripts": [
     {
       "matches": [
+        "https://*.google.com/*",
+        "https://*.google.com.vn/*",
         "*://*.link1s.com/*",
         "*://*.link1s.me/*",
         "*://*.megaurl.in/*",

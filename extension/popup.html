@@ -2,18 +2,17 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bypass Shortlink Việt Nam</title>
+  <title>Bypass Shortlink Việt Nam Pro</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="card">
-    <!-- Header -->
     <div class="header">
       <div class="logo-area">
         <span class="icon-emoji">⚡</span>
         <div>
-          <h2>Bypass Shortlink</h2>
-          <span class="subtext">Phiên bản 1.0.0 (Việt Nam & Quốc tế)</span>
+          <h2>Bypass Shortlink Pro</h2>
+          <span class="subtext">Phiên bản 2.1.0 (Auto-Get & Countdown)</span>
         </div>
       </div>
       <label class="switch">
@@ -22,40 +21,38 @@
       </label>
     </div>
 
-    <!-- Live Status Banner -->
-    <div class="status-banner" id="status-banner">
-      <span class="bullet active"></span>
-      <span class="status-text" id="status-text">Đang bảo vệ (Bộ lọc bật)</span>
+    <!-- Live Step Logging (Log chi tiết từng bước) -->
+    <div class="log-section">
+      <div class="section-title">Nhật ký hoạt động thời gian thực:</div>
+      <div class="log-container" id="realtime-log">
+        <div class="log-item type-info">[00:00:00] Bypass engine khởi động thành công. Sẵn sàng bảo vệ trình duyệt của bạn!</div>
+      </div>
     </div>
 
-    <!-- Actions Panel -->
     <div class="actions">
       <button class="btn btn-primary" id="bypass-current-btn">
-        <span>⚡</span> Bypass trang hiện tại
+        <span>⚡</span> Khởi động cưỡng chế
       </button>
       <button class="btn btn-secondary" id="clear-history-btn">
-        Dọn lịch sử
+        Dọn dữ liệu
       </button>
     </div>
 
-    <!-- Active Configurations / Custom domain section -->
     <div class="tab-section">
       <div class="tab-header">
-        <span class="tab-title">Lịch sử Bypass gần đây</span>
+        <span class="tab-title">Lịch sử Bypass thành công</span>
         <span class="badge" id="bypass-counter">0</span>
       </div>
       <div class="history-list" id="history-container">
-        <!-- Filled dynamically -->
         <div class="empty-state">
-          Chưa bypass link nào. Khi bạng duy chuyển qua shortlink, link gốc sẽ tự động xuất hiện ở đây!
+          Chưa vượt link nào trong phiên này.
         </div>
       </div>
     </div>
 
-    <!-- Info Details / Footer -->
     <div class="footer">
-      <p>Hỗ trợ hơn 45+ trang shortlink phổ biến ở Việt Nam và quốc tế.</p>
-      <p style="margin-top: 4px; font-weight: bold; color: #10b981;">Tự động, an toàn, bảo mật tuyệt đối.</p>
+      <p>Hỗ trợ đầy đủ: TrafficVN, Link1s, Traffic68, MegaURL, OuO, Linkvertise và 45+ trang quốc tế.</p>
+      <p style="margin-top: 4px; font-weight: bold; color: #10b981;">Tự động hoàn toàn • Bỏ qua bước thủ công</p>
     </div>
   </div>
   <script src="utils.js"></script>
