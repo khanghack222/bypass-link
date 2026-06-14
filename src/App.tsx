@@ -20,16 +20,40 @@ import {
 import JSZip from 'jszip';
 import { extensionFiles } from './codeTemplates';
 
+type ApiTestResult = {
+  success?: boolean;
+  method?: string;
+  shortUrl?: string;
+  finalUrl?: string;
+  chain?: string[];
+  host?: string;
+};
+
+type GeminiAnalyzeResult = {
+  searchKeyword: string;
+  targetDomainHint: string;
+  buttonText: string;
+  expectedPageNumber: number;
+  waitTime: number;
+  actionType: string;
+  confidence: number;
+  explanation: string;
+  source?: string;
+};
+
 export default function App() {
   const [testUrl, setTestUrl] = useState('');
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+
+  const [testResult, setTestResult] = useState<ApiTestResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+
 
   const [activeTab, setActiveTab] = useState<'info' | 'domains' | 'files' | 'steps'>('info');
   const [selectedFile, setSelectedFile] = useState<keyof typeof extensionFiles>('manifest.json');
   const [copiedFile, setCopiedFile] = useState(false);
   const [zippingMessage, setZippingMessage] = useState<string | null>(null);
+
 
   // Scanner simulator states (V3.0.0 Pro with Gemini AI)
   const [scanKeyword, setScanKeyword] = useState('five 88');
